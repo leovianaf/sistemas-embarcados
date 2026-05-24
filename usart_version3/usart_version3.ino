@@ -2,7 +2,7 @@
  * =========================================================================
  * INTERPRETADOR DE COMANDOS USART (VERSÃO 3)
  * =========================================================================
- * Mapeamento: Comunicação Serial UART0 via biblioteca "bare_serial.h".
+ * Mapeamento: Comunicação Serial UART0 via biblioteca "usart_version3.h".
  * * COMO UTILIZAR OS COMANDOS NO TERMINAL (Sempre termine com ENTER / '\r'):
  * * 1. ENVIAR DADOS: Digite qualquer texto comum para armazená-lo no buffer.
  * Exemplo: "UFRPE Engenharia" -> Retorna: "Texto recebido e armazenado..."
@@ -21,7 +21,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include "bare_serial.h"
+#include "usart_version3.h"
 
 #define BUF_SIZE 64
 

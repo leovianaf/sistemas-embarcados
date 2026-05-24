@@ -1,4 +1,4 @@
-#include "bare_serial.h"
+#include "interrupcao.h"
 
 void serial_begin(unsigned long baud) {
   unsigned int ubrr = (F_CPU / 16 / baud) - 1;
@@ -6,11 +6,6 @@ void serial_begin(unsigned long baud) {
   UBRR0L = (unsigned char)ubrr;
   UCSR0B = (1 << RXEN0) | (1 << TXEN0);
   UCSR0C = (1 << UCSZ01) | (1 << UCSZ00);
-}
-
-void serial_write_char(char c) {
-  while ( !(UCSR0A & (1 << UDRE0)) );
-  UDR0 = c;
 }
 
 void serial_print(const char *str) {
@@ -31,11 +26,11 @@ void serial_print_ulong(unsigned long num) {
     serial_write_char('0');
     return;
   }
-  char texto_invertido[10];
+  char texto_invertido[10]; 
   int i = 0;
   while (num > 0) {
-    texto_invertido[i] = (num % 10) + '0';
-    num = num / 10;
+    texto_invertido[i] = (num % 10) + '0'; 
+    num = num / 10;                
     i++;
   }
   while (i > 0) {
@@ -44,15 +39,22 @@ void serial_print_ulong(unsigned long num) {
   }
 }
 
-void serial_print_hex(unsigned char num) {
-  char hex_chars[] = "0123456789ABCDEF";
+void configPino(char porta, uint8_t pino, uint8_t modo) {
+  static volatile uint8_t* const ddrs[]  = { &DDRB,  &DDRC,  &DDRD  };
+  static volatile uint8_t* const ports[] = { &PORTB, &PORTC, &PORTD };
 
-  // Imprime o mais significativo (4 bits esquerdos)
-  serial_write_char(hex_chars[(num >> 4) & 0x0F]);
-  // Imprime o menos significativo (4 bits direitos)
-  serial_write_char(hex_chars[num & 0x0F]);
-}
+  uint8_t i = porta - 'B';
+  uint8_t estado = pausaInterrupcoes();
 
-void delay_ms(unsigned long ms) {
-  for (volatile long d = 0; d < (ms * 3200); d++);
+  if (modo == OUTPUT) {
+    *ddrs[i] |= (1 << pino);
+  } else if (modo == INPUT) {
+    *ddrs[i] &= ~(1 << pino);
+    *ports[i] &= ~(1 << pino);
+  } else if (modo == INPUT_PULLUP) {
+    *ddrs[i] &= ~(1 << pino);
+    *ports[i] |= (1 << pino);
+  }
+
+  retomaInterrupcoes(estado);
 }

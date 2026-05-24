@@ -1,7 +1,6 @@
-#include "bare_serial.h"
+#include "usart_imprime_hexa.h"
 
 void setup() {
-  // Inicializa a porta usando sua biblioteca Bare-Metal
   serial_begin(9600);
 
   serial_println("--- REGISTRADORES USART0 (DUMP) ---");

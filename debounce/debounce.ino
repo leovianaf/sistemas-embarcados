@@ -1,10 +1,10 @@
 /*
  * MAPEAMENTO DE HARDWARE:
  * Entrada: Pino A0 (Porto C, Bit 0) com resistor de Pull-Up interno ativado.
- * Saída: Comunicação Serial UART0 via biblioteca bare_serial.h.
+ * Saída: Comunicação Serial UART0 via biblioteca debounce.h.
  */
 
-#include "bare_serial.h"
+#include "debounce.h"
 
 volatile unsigned char *portDDRC  = (volatile unsigned char *) 0x27;
 volatile unsigned char *portPINC  = (volatile unsigned char *) 0x26;

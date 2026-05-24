@@ -1,4 +1,4 @@
-#include "bare_serial.h"
+#include "usart_imprime_hexa.h"
 
 void serial_begin(unsigned long baud) {
   unsigned int ubrr = (F_CPU / 16 / baud) - 1;
@@ -6,11 +6,6 @@ void serial_begin(unsigned long baud) {
   UBRR0L = (unsigned char)ubrr;
   UCSR0B = (1 << RXEN0) | (1 << TXEN0);
   UCSR0C = (1 << UCSZ01) | (1 << UCSZ00);
-}
-
-void serial_write_char(char c) {
-  while ( !(UCSR0A & (1 << UDRE0)) );
-  UDR0 = c;
 }
 
 void serial_print(const char *str) {

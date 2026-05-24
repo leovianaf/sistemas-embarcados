@@ -2,7 +2,7 @@
 // Linhas do teclado: PB0 a PB3 configuradas como ENTRADA_PULLUP.
 
 #include <util/delay.h>
-#include "bare_serial.h"
+#include "teclado.h"
 
 const char mapa_teclas[4][4] = {
   {'1', '2', '3', 'A'},
@@ -10,38 +10,6 @@ const char mapa_teclas[4][4] = {
   {'7', '8', '9', 'C'},
   {'*', '0', '#', 'D'}
 };
-
-inline uint8_t pausaInterrupcoes() {
-  uint8_t estadoAntigo = SREG;
-  cli();
-  return estadoAntigo;
-}
-
-inline void retomaInterrupcoes(uint8_t estadoOld) {
-  SREG = estadoOld;
-}
-
-void configPino(char porta, uint8_t pino, uint8_t modo) {
-  static volatile uint8_t* const ddrs[]  = { &DDRB,  &DDRC,  &DDRD  };
-  static volatile uint8_t* const ports[] = { &PORTB, &PORTC, &PORTD };
-
-  uint8_t i = porta - 'B';
-  uint8_t estado = pausaInterrupcoes();
-
-  if (modo == OUTPUT) {
-    *ddrs[i] |= (1 << pino);
-  }
-  else if (modo == INPUT) {
-    *ddrs[i] &= ~(1 << pino);
-    *ports[i] &= ~(1 << pino);
-  }
-  else if (modo == INPUT_PULLUP) {
-    *ddrs[i] &= ~(1 << pino);
-    *ports[i] |= (1 << pino);
-  }
-
-  retomaInterrupcoes(estado);
-}
 
 void configurar_teclado() {
   for (uint8_t col = 4; col <= 7; col++) {

@@ -1,5 +1,5 @@
 #include <avr/interrupt.h>
-#include "bare_serial.h"
+#include "usart_version2.h"
 
 #define BUF_SIZE 64
 
@@ -29,7 +29,6 @@ void setup() {
 
   serial_begin(9600);
 
-  // Adiciona as interrupções de Recepção (RXCIE0) ao controle da UART
   UCSR0B |= (1 << RXCIE0);
 
   sei();
@@ -74,6 +73,6 @@ ISR(USART_UDRE_vect) {
     UDR0 = tx_buf[tx_tail];
     tx_tail = (tx_tail + 1) % BUF_SIZE;
   } else {
-    UCSR0B &= ~(1 << UDRE0);
+    UCSR0B &= ~(1 << UDRIE0);
   }
 }
