@@ -1,10 +1,19 @@
+// projeto.ino — Solar Tracker de 1 Eixo (Vertical)
+// Baseado em: Henukh et al., "Solar Tracker Design Based on Arduino Nano
+//             to Improve Solar Energy Efficiency", Technium Vol.16, 2023.
+//
+// ADAPTAÇÕES EM RELAÇÃO AO ARTIGO:
+//   Artigo original       →  Esta versão
+//   ─────────────────────────────────────────
+//   3 sensores LDR        →  2 sensores LDR
+//   2 eixos (H + V)       →  1 eixo (V apenas)
 #include "config.h"
 #include "ldr.h"
 #include "servo.h"
 #include "display.h"
-#include <util/delay.h> // Função padrão do AVR-Libc, não é função do core Arduino
+#include <util/delay.h>
 
-uint16_t current_base_pos = SERVO_CENTER;
+static uint16_t current_base_pos = SERVO_CENTER;
 
 void setup() {
     adc_init();
@@ -13,25 +22,27 @@ void setup() {
 }
 
 void loop() {
-    // 1. Leitura dos sensores
-    uint16_t leftLDR = adc_read(LDR_LEFT_CHANNEL);
-    uint16_t rightLDR = adc_read(LDR_RIGHT_CHANNEL);
+    uint16_t topLDR    = adc_read(LDR_TOP_CHANNEL);
+    uint16_t bottomLDR = adc_read(LDR_BOTTOM_CHANNEL);
 
-    // 2. Lógica exata proposta pelo artigo
-    int horizontalError = rightLDR - leftLDR;
+    int verticalError = (int)topLDR - (int)bottomLDR;
 
-    if (horizontalError < -ERROR_THRESHOLD) {
-        current_base_pos -= 10; // Rotaciona à esquerda gradualmente
-    } else if (horizontalError > ERROR_THRESHOLD) {
-        current_base_pos += 10; // Rotaciona à direita gradualmente
+    if (verticalError < -ERROR_THRESHOLD) {
+        if (current_base_pos > SERVO_MIN + SERVO_STEP) {
+            current_base_pos -= SERVO_STEP;
+        } else {
+            current_base_pos = SERVO_MIN;
+        }
+    } else if (verticalError > ERROR_THRESHOLD) {
+        if (current_base_pos < SERVO_MAX - SERVO_STEP) {
+            current_base_pos += SERVO_STEP;
+        } else {
+            current_base_pos = SERVO_MAX;
+        }
     }
-
-    // Atualiza PWM em hardware
     servo_set_base(current_base_pos);
+    
+    display_update(topLDR, bottomLDR, verticalError, current_base_pos);
 
-    // 3. Atualiza interface gráfica
-    display_update(horizontalError, current_base_pos);
-
-    // Taxa de atualização da malha de controle
     _delay_ms(50);
 }
