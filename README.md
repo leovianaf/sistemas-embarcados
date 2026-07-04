@@ -21,6 +21,7 @@ sistemas-embarcados/
 ├── display2/
 ├── display3/
 ├── interrupcao/
+├── projeto/
 ├── teclado/
 ├── usart_imprime_hexa/
 ├── usart_version1/
@@ -45,11 +46,70 @@ Para os projetos que dependem de comunicação serial, as funções foram encaps
 | `display2`           | Fatiamento de um byte em dois Nibbles (Alta e Baixa) para exibição simultânea em dois displays de 7 segmentos separados.                                                                        | Divisão de Bits (Shift/Máscara), Manipulação dos Portos B, C e D                                |
 | `display3`           | Exibição de valores decimais de 0 a 99 com sistema de tratamento de estouro (exibindo "F.F." em caso de valores maiores).                                                                       | Lógica de Overflow, Ponto Decimal Dinâmico, Divisão/Resto Inteiro                               |
 | `interrupcao`        | Medição precisa do tempo decorrido entre transições de subida (RISING) e descida (FALLING) de sinal.                                                                                            | Interrupções Externas (`INT0`/`INT1`), Salvamento de Estado de Interrupções (`SREG`)            |
+| `projeto`            | Rastreador solar de um eixo que compara dois sensores LDR, movimenta um servomotor e apresenta as medições em um display OLED.                                                                  | ADC e PWM Bare-Metal, Timer1, controle por zona morta e display OLED I2C                        |
 | `teclado`            | Varredura de teclado matricial 4x4 e envio do caractere pressionado via comunicação serial.                                                                                                     | GPIO (Entrada Pull-up/Saída), Máscara de Bits, Comunicação UART                                 |
 | `usart_imprime_hexa` | Utilitário para leitura e exibição em formato numérico do estado físico atual dos registradores de controle e configuração da UART0.                                                            | Diagnóstico Bare-Metal, Leitura de Registradores (`UCSR0A`, `UCSR0B`, etc.)                     |
 | `usart_version1`     | Receptor de caracteres via serial que ecoa instantaneamente os dados de volta ao terminal através de interrupção.                                                                               | USART0, Interrupção de Recepção (`USART_RX_vect`)                                               |
 | `usart_version2`     | Evolução da comunicação UART implementando buffers circulares independentes para TX e RX, com lógica de retransmissão sob gatilho (`\r`) e sobrescrita de dados antigos.                        | Estrutura de Dados (Ponteiros Head/Tail), Operações de Resto (`%`), Buffer Circular             |
 | `usart_version3`     | Sistema completo com interpretador de strings que processa comandos em tempo real para exibir buffers, strings invertidas, posições de ponteiros e reconfigurar parâmetros físicos de hardware. | Manipulação de Strings (`strcmp`/`strncmp`), Alteração dinâmica de Baud-rate e tamanho de Frame |
+
+## ☀️ Projeto Final — Rastreador Solar de Um Eixo
+
+O diretório [`projeto/`](projeto/) contém um rastreador solar vertical baseado no ATmega328P. O sistema utiliza dois sensores LDR para identificar a direção com maior incidência de luz, movimenta um servomotor em pequenos passos e exibe os dados de operação em um display OLED SH1106 de 128 × 64 pixels.
+
+O projeto foi adaptado de Henukh et al., _Solar Tracker Design Based on Arduino Nano to Improve Solar Energy Efficiency_, Technium, volume 16, 2023. Em relação ao trabalho original, esta implementação utiliza dois LDRs e somente um eixo de movimentação.
+
+### Funcionamento
+
+1. O ADC lê os LDRs superior e inferior pelos canais ADC0 e ADC1.
+2. O programa calcula o erro vertical pela diferença `LDR superior - LDR inferior`.
+3. Quando o módulo do erro ultrapassa `ERROR_THRESHOLD`, o servo avança um passo na direção do sensor correspondente.
+4. Enquanto o erro permanece dentro da zona morta, a posição é mantida. Isso reduz oscilações causadas por pequenas variações nas leituras.
+5. A cada ciclo, o display apresenta as duas leituras, o erro calculado e o valor de PWM aplicado ao servo.
+
+O ciclo de controle é executado a cada 50 ms. O ADC e o Timer1 são configurados diretamente pelos registradores do ATmega328P. O display utiliza bibliotecas do ecossistema Arduino.
+
+### Mapeamento de hardware
+
+| Componente         | Pino Arduino Nano | Recurso do ATmega328P |
+| ------------------ | ----------------- | --------------------- |
+| Sinal PWM do servo | D9                | PB1/OC1A              |
+| LDR superior       | A0                | PC0/ADC0              |
+| LDR inferior       | A1                | PC1/ADC1              |
+| SDA do display     | A4                | PC4/SDA               |
+| SCL do display     | A5                | PC5/SCL               |
+
+Todos os componentes devem compartilhar o mesmo GND. Caso o servo seja alimentado por uma fonte externa, o GND dessa fonte também deve ser ligado ao GND do Arduino. A fonte deve suportar a corrente exigida pelo servo; não é recomendável alimentar servos de maior corrente diretamente pelo pino de 5 V da placa.
+
+### Organização do código
+
+| Arquivo                             | Responsabilidade                                       |
+| ----------------------------------- | ------------------------------------------------------ |
+| `projeto/projeto.ino`               | Inicialização, laço de controle e decisão de movimento |
+| `projeto/config.h`                  | Canais ADC, limiar de erro e limites do servo          |
+| `projeto/ldr.cpp` e `ldr.h`         | Configuração e leitura Bare-Metal do ADC               |
+| `projeto/servo.cpp` e `servo.h`     | Geração do PWM de 50 Hz pelo Timer1                    |
+| `projeto/display.cpp` e `display.h` | Inicialização e atualização do OLED por I2C            |
+
+### Dependências do display
+
+Instale as bibliotecas abaixo pelo **Gerenciador de Bibliotecas** da Arduino IDE:
+
+- **Adafruit SH110X** — versão testada: `2.1.14`;
+- **Adafruit GFX Library** — versão testada: `1.12.6`;
+- **Adafruit BusIO** — versão testada: `1.17.4`.
+
+A biblioteca `Wire` já faz parte do Arduino Core. O display usado pelo projeto possui controlador SH1106 e o código instancia `Adafruit_SH1106G`.
+
+Para instalar, abra **Ferramentas → Gerenciar Bibliotecas**, pesquise por **Adafruit SH110X** e selecione **Instalar**. A IDE normalmente oferece a instalação automática das dependências GFX e BusIO; confirme essa opção.
+
+### Compilação do projeto
+
+1. Instale as dependências do display.
+2. Abra `projeto/projeto.ino` na Arduino IDE.
+3. Selecione a placa **Arduino Nano** e o processador correspondente ao bootloader da sua placa.
+4. Conecte os componentes conforme o mapeamento acima.
+5. Compile e envie o programa para a placa.
 
 ---
 

@@ -7,7 +7,7 @@
 
 #define ERROR_THRESHOLD    50
 
-#define SERVO_STEP         10
+#define SERVO_STEP        25
 #define SERVO_MIN     1000
 #define SERVO_CENTER  3000
 #define SERVO_MAX     4800

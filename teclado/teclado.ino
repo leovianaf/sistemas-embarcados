@@ -24,6 +24,7 @@ void configurar_teclado() {
 char ler_teclado() {
   for (uint8_t c = 0; c < 4; c++) {
     PORTD &= ~(1 << (c + 4));
+        while ((PINB & 0x0F) != 0x0F) _delay_ms(10);
     _delay_us(10);
 
     uint8_t linhas = PINB & 0x0F;

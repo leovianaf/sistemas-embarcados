@@ -70,9 +70,14 @@ void displayDecimal(unsigned char valor) {
 }
 
 void loop() {
-  displayDecimal(42);
-  for(volatile long d = 0; d < 1000000; d++);
+  // displayDecimal(42);
+  // for(volatile long d = 0; d < 1000000; d++);
 
-  displayDecimal(105);
-  for(volatile long d = 0; d < 1000000; d++);
+  // displayDecimal(105);
+  // for(volatile long d = 0; d < 1000000; d++);
+
+  for (int i = 0; i <= 100; i++) {
+    displayDecimal(i);
+    for(volatile long d = 0; d < 150000; d++);
+  }
 }
